@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fern.vhr.mapper.MenuMapper" >
+  <resultMap id="BaseResultMap" type="com.fern.vhr.model.Menu" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="url" property="url" jdbcType="VARCHAR" />
+    <result column="path" property="path" jdbcType="VARCHAR" />
+    <result column="component" property="component" jdbcType="VARCHAR" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="iconCls" property="iconcls" jdbcType="VARCHAR" />
+    <result column="parentId" property="parentid" jdbcType="INTEGER" />
+    <result column="enabled" property="enabled" jdbcType="BIT" />
+    <association property="meta" javaType="com.fern.vhr.model.Meta">
+      <result column="keepAlive" property="keepalive" jdbcType="BIT" />
+      <result column="requireAuth" property="requireauth" jdbcType="BIT" />
+    </association>
+  </resultMap>
+
+  <resultMap id="BaseResultMap2" type="com.fern.vhr.model.Menu" extends="BaseResultMap">
+    <!--实体类中集合  property属性名  javaType集合类型   ofType泛型-->
+    <collection property="children" javaType="java.util.List" ofType="com.fern.vhr.model.Menu">
+      <id column="id2" property="id" jdbcType="INTEGER" />
+      <result column="url2" property="url" jdbcType="VARCHAR" />
+      <result column="path2" property="path" jdbcType="VARCHAR" />
+      <result column="component2" property="component" jdbcType="VARCHAR" />
+      <result column="name2" property="name" jdbcType="VARCHAR" />
+      <result column="iconCls2" property="iconcls" jdbcType="VARCHAR" />
+      <result column="parentId2" property="parentid" jdbcType="INTEGER" />
+      <result column="enabled2" property="enabled" jdbcType="BIT" />
+      <association property="meta" javaType="com.fern.vhr.model.Meta">
+        <result column="keepAlive2" property="keepalive" jdbcType="BIT" />
+        <result column="requireAuth2" property="requireauth" jdbcType="BIT" />
+      </association>
+    </collection>
+  </resultMap>
+
+
+  <resultMap id="MenuWithRole" type="com.fern.vhr.model.Menu" extends="BaseResultMap">
+    <collection property="roles" javaType="java.util.List" ofType="com.fern.vhr.model.Role">
+      <result column="rid" property="id"/>
+      <result column="rname" property="name"/>
+      <result column="rnameZh" property="namezh"/>
+    </collection>
+  </resultMap>
+
+
+  <resultMap id="BaseResultMap3" type="com.fern.vhr.model.Menu">
+    <id column="id1" property="id"/>
+    <result column="name1" property="name"/>
+    <collection property="children" javaType="java.util.List" ofType="com.fern.vhr.model.Menu">
+      <id column="id2" property="id"/>
+      <result column="name2" property="name"/>
+      <collection property="children" javaType="java.util.List" ofType="com.fern.vhr.model.Menu">
+        <id column="id3" property="id"/>
+        <result column="name3" property="name"/>
+      </collection>
+    </collection>
+  </resultMap>
+
+
+    <select id="getMenuIdByrid" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+        select mid from menu_role where rid=#{rid};
+    </select>
+  <select id="getMenus" resultMap="BaseResultMap3">
+    SELECT
+        m1.id AS id1,
+        m1. NAME AS name1,
+        m2.id AS id2,
+        m2. NAME AS name2,
+        m3.id AS id3,
+        m3.name AS name3
+    FROM
+        menu AS m1,
+        menu AS m2,
+        menu AS m3
+    WHERE
+        m1.id = m2.parentId
+    AND m2.id = m3.parentId
+    ORDER BY m3.id
+  </select>
+
+  <select id="getMenusByhrId" resultMap="BaseResultMap2" parameterType="java.lang.Integer">
+               SELECT
+              m1.*, m2.id AS id2,
+              m2.url AS urL2,
+              m2.path AS path2,
+              m2.component AS component2,
+              m2.`name` AS name2,
+              m2.iconCls AS iconCls2,
+              m2.keepAlive AS keepAlive2,
+              m2.requireAuth AS requireAuth2,
+              m2.parentId AS parentId2,
+              m2.enabled AS enabled2
+          FROM
+              menu AS m1,
+              menu AS m2
+          WHERE
+              m1.id = m2.parentId
+
+          AND m2.id IN (
+              /*# 根据角色ID查询出该角色所具有的菜单ID*/
+              SELECT
+                  mr.mid
+              FROM
+                  menu_role mr
+              WHERE
+                  mr.rid IN (
+                      /*# 根据用户ID查询出改用的角色ID*/
+                      SELECT
+                          hrr.rid
+                      FROM
+                          hr_role hrr
+                      WHERE
+                          hrid = #{id}
+                  )
+          )
+
+  </select>
+
+
+
+  <select id="getMenuAll" resultMap="MenuWithRole">
+            SELECT
+                m.*, r.id AS rid,
+                r. NAME AS rname,
+                r.nameZh AS rnameZh
+            FROM
+                menu AS m,
+                menu_role AS mr,
+                role AS r
+            WHERE
+                m.id = mr.mid
+            AND mr.rid = r.id
+  </select>
+
+
+
+    <delete id="deleteByRid" parameterType="java.lang.Integer">
+    delete from menu_role
+    where rid=#{rid};
+  </delete>
+    <insert id="insertByRid">
+        insert into menu_role (rid,mid)
+        values
+        <foreach collection="mids" separator="," item="mid">
+            (#{rid},#{mid})
+        </foreach>
+    </insert>
+  <sql id="Base_Column_List" >
+    id, url, path, component, name, iconCls, keepAlive, requireAuth, parentId, enabled
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from menu
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from menu
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.fern.vhr.model.Menu" >
+    insert into menu (id, url, path, 
+      component, name, iconCls, 
+      keepAlive, requireAuth, parentId, 
+      enabled)
+    values (#{id,jdbcType=INTEGER}, #{url,jdbcType=VARCHAR}, #{path,jdbcType=VARCHAR}, 
+      #{component,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, #{iconcls,jdbcType=VARCHAR}, 
+      #{keepalive,jdbcType=BIT}, #{requireauth,jdbcType=BIT}, #{parentid,jdbcType=INTEGER}, 
+      #{enabled,jdbcType=BIT})
+  </insert>
+  <insert id="insertSelective" parameterType="com.fern.vhr.model.Menu" >
+    insert into menu
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="url != null" >
+        url,
+      </if>
+      <if test="path != null" >
+        path,
+      </if>
+      <if test="component != null" >
+        component,
+      </if>
+      <if test="name != null" >
+        name,
+      </if>
+      <if test="iconcls != null" >
+        iconCls,
+      </if>
+      <if test="keepalive != null" >
+        keepAlive,
+      </if>
+      <if test="requireauth != null" >
+        requireAuth,
+      </if>
+      <if test="parentid != null" >
+        parentId,
+      </if>
+      <if test="enabled != null" >
+        enabled,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="url != null" >
+        #{url,jdbcType=VARCHAR},
+      </if>
+      <if test="path != null" >
+        #{path,jdbcType=VARCHAR},
+      </if>
+      <if test="component != null" >
+        #{component,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null" >
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="iconcls != null" >
+        #{iconcls,jdbcType=VARCHAR},
+      </if>
+      <if test="keepalive != null" >
+        #{keepalive,jdbcType=BIT},
+      </if>
+      <if test="requireauth != null" >
+        #{requireauth,jdbcType=BIT},
+      </if>
+      <if test="parentid != null" >
+        #{parentid,jdbcType=INTEGER},
+      </if>
+      <if test="enabled != null" >
+        #{enabled,jdbcType=BIT},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.fern.vhr.model.Menu" >
+    update menu
+    <set >
+      <if test="url != null" >
+        url = #{url,jdbcType=VARCHAR},
+      </if>
+      <if test="path != null" >
+        path = #{path,jdbcType=VARCHAR},
+      </if>
+      <if test="component != null" >
+        component = #{component,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null" >
+        name = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="iconcls != null" >
+        iconCls = #{iconcls,jdbcType=VARCHAR},
+      </if>
+      <if test="keepalive != null" >
+        keepAlive = #{keepalive,jdbcType=BIT},
+      </if>
+      <if test="requireauth != null" >
+        requireAuth = #{requireauth,jdbcType=BIT},
+      </if>
+      <if test="parentid != null" >
+        parentId = #{parentid,jdbcType=INTEGER},
+      </if>
+      <if test="enabled != null" >
+        enabled = #{enabled,jdbcType=BIT},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.fern.vhr.model.Menu" >
+    update menu
+    set url = #{url,jdbcType=VARCHAR},
+      path = #{path,jdbcType=VARCHAR},
+      component = #{component,jdbcType=VARCHAR},
+      name = #{name,jdbcType=VARCHAR},
+      iconCls = #{iconcls,jdbcType=VARCHAR},
+      keepAlive = #{keepalive,jdbcType=BIT},
+      requireAuth = #{requireauth,jdbcType=BIT},
+      parentId = #{parentid,jdbcType=INTEGER},
+      enabled = #{enabled,jdbcType=BIT}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

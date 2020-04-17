@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fern.vhr.mapper.EmpSalaryMapper" >
+  <resultMap id="BaseResultMap" type="com.fern.vhr.model.EmpSalary" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="eid" property="eid" jdbcType="INTEGER" />
+    <result column="sid" property="sid" jdbcType="INTEGER" />
+  </resultMap>
+
+  <resultMap id="getSobConfigWithPage" type="com.fern.vhr.model.EmpSalary">
+    <association property="employee" javaType="com.fern.vhr.model.Employee">
+      <id column="id" property="id"/>
+      <result column="name" property="name"/>
+      <result column="workID" property="workid"/>
+      <result column="email" property="email"/>
+      <result column="phone" property="phone"/>
+    </association>
+    <association property="department" javaType="com.fern.vhr.model.Department">
+      <result column="departmentName" property="name"/>
+    </association>
+    <association property="salary" javaType="com.fern.vhr.model.Salary">
+      <id column="sid" property="id"/>
+      <result column="sName" property="name"/>
+      <result column="basicSalary" property="basicsalary"/>
+      <result column="bonus" property="bonus"/>
+      <result column="lunchSalary" property="lunchsalary"/>
+      <result column="trafficSalary" property="trafficsalary"/>
+      <result column="pensionBase" property="pensionbase"/>
+      <result column="pensionPer" property="pensionper"/>
+      <result column="createDate" property="createdate"/>
+      <result column="medicalBase" property="medicalbase"/>
+      <result column="medicalPer" property="medicalper"/>
+      <result column="accumulationFundBase" property="accumulationfundbase"/>
+      <result column="accumulationFundPer" property="accumulationfundper"/>
+    </association>
+  </resultMap>
+
+  <select id="isExits" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+    select count(*) from empsalary where eid=#{employeeId}
+  </select>
+
+
+  <select id="getAllSobConfigs" resultMap="getSobConfigWithPage">
+        SELECT
+          emp.id,
+          emp.name,
+          emp.workID,
+          emp.email,
+          emp.phone,
+          dep.name AS departmentName,
+          sal.id AS sid,
+          sal.name AS sName,
+          sal.basicSalary AS basicSalary,
+          sal.bonus AS bonus,
+          sal.lunchSalary AS lunchSalary,
+          sal.trafficSalary AS trafficSalary,
+          sal.pensionBase AS pensionBase,
+          sal.pensionPer AS pensionPer,
+          sal.createDate AS createDate,
+          sal.medicalBase AS medicalBase,
+          sal.medicalPer AS medicalPer,
+          sal.accumulationFundBase AS accumulationFundBase,
+          sal.accumulationFundPer AS accumulationFundPer
+      FROM
+          employee emp
+      LEFT JOIN empsalary emps ON emp.id = emps.eid
+      LEFT JOIN salary sal ON emps.sid = sal.id
+      LEFT JOIN department dep ON emp.departmentId = dep.id
+      limit #{page},#{size}
+  </select>
+
+
+  <select id="getAllConfigCount" resultType="java.lang.Integer" >
+    SELECT
+	count(*)
+    FROM
+        employee emp
+    LEFT JOIN empsalary emps ON emp.id = emps.eid
+    LEFT JOIN salary sal ON emps.sid = sal.id
+    LEFT JOIN department dep ON emp.departmentId = dep.id
+  </select>
+
+  <sql id="Base_Column_List" >
+    id, eid, sid
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from empsalary
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from empsalary
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+
+
+  <insert id="insertSalarySob">
+    insert into empsalary (eid,sid)
+    values(#{employeeId},#{salaryId})
+  </insert>
+
+  <insert id="insert" parameterType="com.fern.vhr.model.EmpSalary" >
+    insert into empsalary (id, eid, sid)
+    values (#{id,jdbcType=INTEGER}, #{eid,jdbcType=INTEGER}, #{sid,jdbcType=INTEGER})
+  </insert>
+  <insert id="insertSelective" parameterType="com.fern.vhr.model.EmpSalary" >
+    insert into empsalary
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="eid != null" >
+        eid,
+      </if>
+      <if test="sid != null" >
+        sid,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="eid != null" >
+        #{eid,jdbcType=INTEGER},
+      </if>
+      <if test="sid != null" >
+        #{sid,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.fern.vhr.model.EmpSalary" >
+    update empsalary
+    <set >
+      <if test="eid != null" >
+        eid = #{eid,jdbcType=INTEGER},
+      </if>
+      <if test="sid != null" >
+        sid = #{sid,jdbcType=INTEGER},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.fern.vhr.model.EmpSalary" >
+    update empsalary
+    set eid = #{eid,jdbcType=INTEGER},
+      sid = #{sid,jdbcType=INTEGER}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+
+  <update id="updateSalarySob" >
+    update empsalary set sid=#{salaryId}
+    where eid=#{employeeId}
+  </update>
+</mapper>
